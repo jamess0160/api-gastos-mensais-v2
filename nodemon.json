@@ -1,0 +1,6 @@
+{
+    "watch": ["."],
+    "ext": ".ts,.js",
+    "ignore": ["logs.json"],
+    "exec": "npx ts-node ./index.ts"
+  }
