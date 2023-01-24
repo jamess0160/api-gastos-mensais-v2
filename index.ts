@@ -1,4 +1,5 @@
 import express from "express"
+import rotas from "./rotas"
 import AsyncHandler from "./src/asyncHandler"
 import conn from "./src/conn"
 
@@ -19,6 +20,8 @@ app.use((req, res, next) => {
 app.get("/teste", AsyncHandler(async (req, res, next) => {
     res.json(await conn.query("SELECT NOaW() as TesteConexao"))
 }))
+
+app.use(rotas)
 
 app.listen(3001, () => {
     console.log("API aberta: http://localhost:3001/teste")
