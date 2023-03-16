@@ -4,7 +4,7 @@ const connection = mysql.createConnection({
     host: "localhost",
     user: 'root',
     password: '123456',
-    database: 'gastos_mensais'
+    database: 'gastos_mensais_v2'
 })
 
 connection.connect()
@@ -20,7 +20,7 @@ export default {
             }
             connection.query(queryObject, (error, result) => {
                 if (error) {
-                    reject({ error })
+                    reject(error)
                     return
                 }
                 resolve(result)
