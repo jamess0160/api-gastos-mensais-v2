@@ -28,5 +28,6 @@ CREATE TABLE registro_gastos (
 create table entradas (
     id int PRIMARY KEY auto_increment,
     nome varchar(30),
-    valor float
+    valor float,
+    data_registro datetime DEFAULT NOW()
 );
