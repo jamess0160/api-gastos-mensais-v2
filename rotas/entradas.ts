@@ -8,6 +8,10 @@ entradas.get('/entradas', AsyncHandler(async (req, res) => {
     res.json(await conn.query("SELECT * FROM entradas ORDER BY id LIMIT 500"))
 }))
 
+entradas.get('/entradas/:mes', AsyncHandler(async (req, res) => {
+    res.json(await conn.query("SELECT * FROM entradas WHERE MONTH(data_registro) = ? ORDER BY id", [req.params.mes]))
+}))
+
 entradas.post('/entradas', AsyncHandler(async (req, res) => {
     res.json(await conn.query("INSERT INTO entradas SET ?", [req.body]))
 }))
