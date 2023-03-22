@@ -8,8 +8,8 @@ registro_gastos.get('/registro_gastos', AsyncHandler(async (req, res) => {
     res.json(await conn.query("SELECT * FROM registro_gastos ORDER BY id LIMIT 500"))
 }))
 
-registro_gastos.get('/registro_gastos/:mes', AsyncHandler(async (req, res) => {
-    res.json(await conn.query("SELECT * FROM registro_gastos WHERE MONTH(data_registro) = ? ORDER BY id", [req.params.mes]))
+registro_gastos.get('/registro_gastos/:banco/:tipo/:mes', AsyncHandler(async (req, res) => {
+    res.json(await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND MONTH(data_registro) = ? ORDER BY id", [req.params.banco, req.params.tipo, req.params.mes]))
 }))
 
 registro_gastos.post('/registro_gastos', AsyncHandler(async (req, res) => {
