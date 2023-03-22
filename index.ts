@@ -2,8 +2,11 @@ import express from "express"
 import rotas from "./rotas"
 import AsyncHandler from "./src/asyncHandler"
 import conn from "./src/conn"
+import cors from 'cors'
 
 const app = express()
+
+app.use(cors())
 
 app.get("/teste", AsyncHandler(async (req, res, next) => {
     res.json(await conn.query("SELECT NOW() as TesteConexao"))
