@@ -7,6 +7,7 @@ import cors from 'cors'
 const app = express()
 
 app.use(cors())
+app.use(express.json())
 
 app.get("/teste", AsyncHandler(async (req, res, next) => {
     res.json(await conn.query("SELECT NOW() as TesteConexao"))
