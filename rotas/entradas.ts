@@ -9,7 +9,7 @@ entradas.get('/entradas', AsyncHandler(async (req, res) => {
 }))
 
 entradas.get('/entradas/:mes', AsyncHandler(async (req, res) => {
-    res.json(await conn.query("SELECT * FROM entradas WHERE MONTH(data_registro) = ? ORDER BY id", [req.params.mes]))
+    res.json(await conn.query("SELECT * FROM entradas WHERE MONTH(data_registro) = ? ORDER BY id", [parseInt(req.params.mes)]))
 }))
 
 entradas.post('/entradas', AsyncHandler(async (req, res) => {
