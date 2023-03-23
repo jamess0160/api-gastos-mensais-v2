@@ -2,7 +2,7 @@ import express from "express"
 import AsyncHandler from "../src/asyncHandler"
 import conn from "../src/conn"
 
-export interface Registro_gasto {
+export type Registro_gasto = {
     id: number
     data_registro: string
     data_gasto: string

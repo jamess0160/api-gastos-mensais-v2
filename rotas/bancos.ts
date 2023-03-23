@@ -3,13 +3,13 @@ import AsyncHandler from "../src/asyncHandler"
 import conn from "../src/conn"
 import { Registro_gasto } from "./registro_gastos"
 
-export interface Banco {
+export type Banco = {
     id: number,
     nome: string,
     cor: string,
 }
 
-interface Tile extends Banco {
+type Tile = Banco & {
     totais: {
         alimentacao: string,
         transportes: string,
@@ -22,6 +22,11 @@ const bancos = express()
 
 bancos.get('/bancos', AsyncHandler(async (req, res) => {
     res.json(await conn.query("SELECT * FROM bancos ORDER BY id LIMIT 500"))
+}))
+
+bancos.get('/bancos/porId/:id', AsyncHandler(async (req, res) => {
+    let [banco] = await conn.query("SELECT * FROM bancos WHERE id = ?", [parseInt(req.params.id)])
+    res.json(banco)
 }))
 
 bancos.get('/bancos/gastosPorBanco', AsyncHandler(async (req, res) => {
