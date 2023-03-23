@@ -2,6 +2,16 @@ import express from "express"
 import AsyncHandler from "../src/asyncHandler"
 import conn from "../src/conn"
 
+export interface Registro_gasto {
+    id: number
+    data_registro: string
+    data_gasto: string
+    descricao: string
+    valor: number
+    tipo: number
+    banco_id: number
+}
+
 const registro_gastos = express()
 
 registro_gastos.get('/registro_gastos', AsyncHandler(async (req, res) => {
