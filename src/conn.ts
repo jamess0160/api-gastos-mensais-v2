@@ -11,7 +11,7 @@ connection.connect()
 
 
 export default {
-    query(sqlQuery: string, params?: any[]) {
+    query(sqlQuery: string, params?: any[]): Promise<any[]> {
 
         return new Promise((resolve, reject) => {
             let queryObject: QueryOptions = {
