@@ -7,6 +7,8 @@ export type Registro_gasto = {
     data_registro: string
     data_gasto: string
     descricao: string
+    parcela_atual: string
+    parcelas_totais: string
     valor: number
     tipo: number
     banco_id: number

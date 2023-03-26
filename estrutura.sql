@@ -5,7 +5,8 @@ USE gastos_mensais_v2;
 CREATE TABLE bancos (
     id int PRIMARY KEY auto_increment,
     nome varchar(80),
-    cor varchar(10)
+    icone varchar(60),
+    posicao int
 );
 
 /*
@@ -19,6 +20,8 @@ CREATE TABLE registro_gastos (
     data_registro datetime DEFAULT NOW(),
     data_gasto date DEFAULT (CURRENT_DATE),
     descricao varchar(120),
+    parcela_atual int,
+    parcelas_totais int,
     valor float,
     tipo int,
     banco_id int,

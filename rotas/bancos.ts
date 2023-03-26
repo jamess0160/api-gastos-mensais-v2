@@ -15,7 +15,7 @@ type Tile = Banco & {
         transportes: string,
         geral: string
     },
-    total: number
+    total: string
 }
 
 const bancos = express()
@@ -30,7 +30,7 @@ bancos.get('/bancos/porId/:id', AsyncHandler(async (req, res) => {
 }))
 
 bancos.get('/bancos/gastosPorBanco', AsyncHandler(async (req, res) => {
-    let bancos: Tile[] = await conn.query("SELECT * FROM bancos ORDER BY id LIMIT 500")
+    let bancos: Tile[] = await conn.query("SELECT * FROM bancos ORDER BY posicao, id LIMIT 500")
 
     for await (let item of bancos) {
         let gastosAlimentacao: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ?", [item.id, 1])
@@ -46,7 +46,7 @@ bancos.get('/bancos/gastosPorBanco', AsyncHandler(async (req, res) => {
             transportes: totalTransportes.toFixed(2),
             geral: totalGeral.toFixed(2),
         }
-        item.total = totalAlimentacao + totalTransportes + totalGeral
+        item.total = (totalAlimentacao + totalTransportes + totalGeral).toFixed(2)
     }
 
     res.json(bancos)
