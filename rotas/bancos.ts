@@ -33,9 +33,9 @@ bancos.get('/bancos/gastosPorBanco', AsyncHandler(async (req, res) => {
     let bancos: Tile[] = await conn.query("SELECT * FROM bancos ORDER BY posicao, id LIMIT 500")
 
     for await (let item of bancos) {
-        let gastosAlimentacao: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ?", [item.id, 1])
+        let gastosGeral: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ?", [item.id, 1])
         let gastosTransportes: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ?", [item.id, 2])
-        let gastosGeral: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ?", [item.id, 3])
+        let gastosAlimentacao: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ?", [item.id, 3])
 
         let totalAlimentacao = gastosAlimentacao.reduce((anterior, atual) => anterior + atual.valor, 0)
         let totalTransportes = gastosTransportes.reduce((anterior, atual) => anterior + atual.valor, 0)
