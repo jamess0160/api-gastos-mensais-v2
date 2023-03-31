@@ -6,7 +6,7 @@ CREATE TABLE bancos (
     id int PRIMARY KEY auto_increment,
     nome varchar(80),
     icone varchar(60),
-    posicao int
+    posicao int DEFAULT 1000
 );
 
 /*
@@ -28,9 +28,15 @@ CREATE TABLE registro_gastos (
     foreign key (banco_id) references bancos(id)
 );
 
+create table tipos_entrada(
+    id int PRIMARY KEY auto_increment,
+    nome varchar(30)
+);
+
 create table entradas (
     id int PRIMARY KEY auto_increment,
-    nome varchar(30),
+    tipo_id int,
     valor float,
-    data_registro datetime DEFAULT NOW()
+    data_vigente datetime,
+    foreign key (tipo_id) references tipos_entrada(id)
 );
