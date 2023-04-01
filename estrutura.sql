@@ -17,7 +17,7 @@ CREATE TABLE bancos (
  */
 CREATE TABLE registro_gastos (
     id int PRIMARY KEY auto_increment,
-    data_registro datetime DEFAULT NOW(),
+    data_registro datetime,
     data_gasto date DEFAULT (CURRENT_DATE),
     descricao varchar(120),
     parcela_atual int,
