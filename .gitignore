@@ -2,3 +2,4 @@ node_modules/
 logs.json
 logs.txt
 start.cmd
+build/

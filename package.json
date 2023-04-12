@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
-    "start": "npx nodemon"
+    "start": "npx nodemon",
+	"startProd": "npx ts-node ./index.ts"
   },
   "repository": {
     "type": "git",
