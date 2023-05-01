@@ -20,6 +20,8 @@ type Tile = Banco & {
 
 const bancos = express()
 
+//#region Rotas
+
 bancos.get('/bancos', AsyncHandler(async (req, res) => {
     res.json(await conn.query("SELECT * FROM bancos ORDER BY posicao, id LIMIT 500"))
 }))
@@ -29,22 +31,19 @@ bancos.get('/bancos/porId/:id', AsyncHandler(async (req, res) => {
     res.json(banco)
 }))
 
-bancos.get('/bancos/gastosPorBanco', AsyncHandler(async (req, res) => {
+bancos.get('/bancos/gastosPorBanco/mes=:mes', AsyncHandler(async (req, res) => {
+
     let bancos: Tile[] = await conn.query("SELECT * FROM bancos ORDER BY posicao, id LIMIT 500")
 
     for await (let item of bancos) {
-        let gastosGeral: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, 1])
-        let gastosTransportes: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, 2])
-        let gastosAlimentacao: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, 3])
-
-        let totalAlimentacao = gastosAlimentacao.reduce((anterior, atual) => anterior + atual.valor, 0)
-        let totalTransportes = gastosTransportes.reduce((anterior, atual) => anterior + atual.valor, 0)
-        let totalGeral = gastosGeral.reduce((anterior, atual) => anterior + atual.valor, 0)
+        let [{ totalGeral }] = await conn.query("SELECT SUM(valor) as totalGeral FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, 1])
+        let [{ totalTransportes }] = await conn.query("SELECT SUM(valor) as totalTransportes FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, 2])
+        let [{ totalAlimentacao }] = await conn.query("SELECT SUM(valor) as totalAlimentacao FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, 3])
 
         item.totais = {
-            alimentacao: totalAlimentacao.toFixed(2),
-            transportes: totalTransportes.toFixed(2),
-            geral: totalGeral.toFixed(2),
+            alimentacao: totalAlimentacao !== null ? totalAlimentacao.toFixed(2) : 0,
+            transportes: totalTransportes !== null ? totalTransportes.toFixed(2) : 0,
+            geral: totalGeral !== null ? totalGeral.toFixed(2) : 0,
         }
         item.total = (totalAlimentacao + totalTransportes + totalGeral).toFixed(2)
     }
@@ -63,5 +62,7 @@ bancos.put('/bancos/:id', AsyncHandler(async (req, res) => {
 bancos.delete('/bancos/:id', AsyncHandler(async (req, res) => {
     res.json(await conn.query("DELETE FROM bancos WHERE id = ?", [req.params.id]))
 }))
+
+//#endregion
 
 export default bancos
