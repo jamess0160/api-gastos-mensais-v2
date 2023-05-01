@@ -6,15 +6,54 @@ import { Entrada } from "./entradas"
 
 const proximoMes = express()
 
-proximoMes.post("/proximoMes/gastos/mesAtual=:mes/anoAtual=:ano", AsyncHandler(async (req, res) => {
-    let registrosParaDuplicar = await conn.query<Registro_gasto>("SELECT * FROM registro_gastos WHERE parcela_atual < parcelas_totais AND MONTH(data_registro) = ? AND YEAR(data_registro) = ?", [req.params.mes, req.params.ano])
+proximoMes.post("/proximoMes/mesAtual=:mes/anoAtual=:ano", AsyncHandler(async (req, res) => {
+
+    if (await verificarMesDuplicado(req.params)) {
+        res.status(500).json({
+            msg: "Este mês já foi duplicado!"
+        })
+        return
+    }
+
+    let gastos = await pegarGastos(req.params)
+    let entradas = await pegarEntradas(req.params)
+
+    res.json(await conn.transaction([
+        ...gastos,
+        ...entradas,
+        { query: "INSERT INTO mesesDuplicados SET ?", params: [req.params] }
+    ]))
+}))
+
+async function verificarMesDuplicado({ mes, ano }: any): Promise<boolean> {
+    let [mesAtual] = await conn.query("SELECT * FROM mesesDuplicados WHERE mes = ? AND ano = ?", [mes, ano])
+
+    return mesAtual ? true : false
+}
+
+async function pegarGastos({ mes, ano }: any) {
+    let registrosParaDuplicar = await conn.query<Registro_gasto>(`
+        SELECT
+            *
+        FROM
+            registro_gastos
+        WHERE
+            (
+                parcela_atual < parcelas_totais
+                OR (
+                    data_gasto is null
+                    AND parcela_atual is null
+                )
+            )
+            AND MONTH(data_registro) = ?
+            AND YEAR(data_registro) = ?
+    `, [mes, ano])
 
     let novosRegistros = registrosParaDuplicar.map((item) => {
-        item.parcela_atual += 1
         return {
             data_gasto: item.data_gasto,
             descricao: item.descricao,
-            parcela_atual: item.parcela_atual + 1,
+            parcela_atual: item.parcela_atual ? item.parcela_atual + 1 : null,
             parcelas_totais: item.parcelas_totais,
             valor: item.valor,
             tipo: item.tipo,
@@ -22,20 +61,20 @@ proximoMes.post("/proximoMes/gastos/mesAtual=:mes/anoAtual=:ano", AsyncHandler(a
         }
     })
 
-    res.json(await conn.transaction(novosRegistros.map((item) => {
+    return novosRegistros.map((item) => {
         return {
             query: "INSERT INTO registro_gastos SET ?",
             params: [item]
         }
-    })))
-}))
+    })
+}
 
-proximoMes.post("/proximoMes/entradas/mesAtual=:mes/anoAtual=:ano", AsyncHandler(async (req, res) => {
+async function pegarEntradas({ mes, ano }: any) {
     let registrosParaDuplicar = await conn.query<Entrada>(`
         SELECT * FROM entradas WHERE id IN (
             SELECT max(id) FROM entradas WHERE MONTH(data_registro) = ? AND YEAR(data_registro) = ? GROUP BY tipo_id
         )
-    `, [req.params.mes, req.params.ano])
+    `, [mes, ano])
 
     let novosRegistros = registrosParaDuplicar.map((item) => {
         return {
@@ -44,13 +83,13 @@ proximoMes.post("/proximoMes/entradas/mesAtual=:mes/anoAtual=:ano", AsyncHandler
         }
     })
 
-    res.json(await conn.transaction(novosRegistros.map((item) => {
+    return novosRegistros.map((item) => {
         return {
             query: "INSERT INTO entradas SET ?",
             params: [item]
         }
-    })))
-}))
+    })
+}
 
 
 export default proximoMes

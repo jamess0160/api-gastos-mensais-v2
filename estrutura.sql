@@ -28,15 +28,21 @@ CREATE TABLE registro_gastos (
     foreign key (banco_id) references bancos(id)
 );
 
-create table tipos_entrada(
+CREATE TABLE tipos_entrada(
     id int PRIMARY KEY auto_increment,
     nome varchar(30)
 );
 
-create table entradas (
+CREATE TABLE entradas (
     id int PRIMARY KEY auto_increment,
     tipo_id int,
     valor float,
     data_registro datetime DEFAULT (CURRENT_DATE),
     foreign key (tipo_id) references tipos_entrada(id)
+);
+
+CREATE TABLE mesesDuplicados (
+    id int PRIMARY KEY auto_increment,
+    mes int,
+    ano int
 );
