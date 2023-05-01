@@ -37,6 +37,6 @@ create table entradas (
     id int PRIMARY KEY auto_increment,
     tipo_id int,
     valor float,
-    data_vigente datetime,
+    data_registro datetime,
     foreign key (tipo_id) references tipos_entrada(id)
 );
