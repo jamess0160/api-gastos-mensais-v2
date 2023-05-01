@@ -15,12 +15,12 @@ entradas.get('/entradas', AsyncHandler(async (req, res) => {
     res.json(await conn.query("SELECT * FROM entradas ORDER BY id LIMIT 500"))
 }))
 
-entradas.get('/entradas/recentes/mes=:mes', AsyncHandler(async (req, res) => {
+entradas.get('/entradas/recentes/mes=:mes/ano=:ano', AsyncHandler(async (req, res) => {
     res.json(await conn.query(`
         SELECT * FROM entradas WHERE id IN (
-            SELECT max(id) FROM entradas WHERE MONTH(data_registro) = ? GROUP BY tipo_id
+            SELECT max(id) FROM entradas WHERE MONTH(data_registro) = ? AND YEAR(data_registro) = ? GROUP BY tipo_id
         )
-    `, [req.params.mes]))
+    `, [req.params.mes, req.params.ano]))
 }))
 
 entradas.post('/entradas', AsyncHandler(async (req, res) => {
