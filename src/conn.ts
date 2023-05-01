@@ -23,7 +23,6 @@ export default {
                 sql: sqlQuery,
                 values: params
             }
-            console.log(queryObject)
             connection.query(queryObject, (error, result) => {
                 if (error) {
                     reject(error)
