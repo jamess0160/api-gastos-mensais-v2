@@ -16,6 +16,7 @@ type Tile = Banco & {
         geral: string
     },
     total: string
+    totalInativos: string
 }
 
 const bancos = express()
@@ -36,9 +37,9 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     let bancos: Tile[] = await conn.query("SELECT * FROM bancos ORDER BY posicao, id LIMIT 500")
 
     for await (let item of bancos) {
-        let [{ totalGeral }] = await conn.query("SELECT SUM(valor) as totalGeral FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 1])
-        let [{ totalTransportes }] = await conn.query("SELECT SUM(valor) as totalTransportes FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 2])
-        let [{ totalAlimentacao }] = await conn.query("SELECT SUM(valor) as totalAlimentacao FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 3])
+        let [{ totalGeral, totalGeralInativos }] = await conn.query("SELECT SUM(valor) as totalGeralInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalGeral FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ?", [item.id, req.params.mes, req.params.ano, 1])
+        let [{ totalTransportes, totalTransportesInativos }] = await conn.query("SELECT SUM(valor) as totalTransportesInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalTransportes FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ?", [item.id, req.params.mes, req.params.ano, 2])
+        let [{ totalAlimentacao, totalAlimentacaoInativos }] = await conn.query("SELECT SUM(valor) as totalAlimentacaoInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalAlimentacao FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ?", [item.id, req.params.mes, req.params.ano, 3])
 
         item.totais = {
             alimentacao: totalAlimentacao !== null ? totalAlimentacao.toFixed(2) : 0,
@@ -46,6 +47,7 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
             geral: totalGeral !== null ? totalGeral.toFixed(2) : 0,
         }
         item.total = (totalAlimentacao + totalTransportes + totalGeral).toFixed(2)
+        item.totalInativos = (totalAlimentacaoInativos + totalTransportesInativos + totalGeralInativos).toFixed(2)
     }
 
     res.json(bancos)
