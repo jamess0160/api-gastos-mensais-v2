@@ -32,6 +32,12 @@ registro_gastos.put('/registro_gastos/:id', AsyncHandler(async (req, res) => {
     res.json(await conn.query("UPDATE registro_gastos SET ? WHERE id = ?", [req.body, req.params.id]))
 }))
 
+registro_gastos.put('/registro_gastos/active=:active/:id', AsyncHandler(async (req, res) => {
+    let bool = req.params.active === "false" ? false : true
+    
+    res.json(await conn.query("UPDATE registro_gastos SET active = ? WHERE id = ?", [bool, req.params.id]))
+}))
+
 registro_gastos.delete('/registro_gastos/:id', AsyncHandler(async (req, res) => {
     res.json(await conn.query("DELETE FROM registro_gastos WHERE id = ?", [req.params.id]))
 }))

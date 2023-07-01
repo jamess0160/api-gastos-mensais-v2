@@ -25,6 +25,7 @@ CREATE TABLE registro_gastos (
     valor float,
     tipo int,
     banco_id int,
+    active boolean default true,
     foreign key (banco_id) references bancos(id)
 );
 
