@@ -1,4 +1,5 @@
 import mysql, { QueryOptions } from "mysql"
+import "dotenv/config"
 
 type transactionParam = {
     query: string,
@@ -6,14 +7,13 @@ type transactionParam = {
 }
 
 const connection = mysql.createConnection({
-    host: "localhost",
-    user: 'root',
-    password: '123456',
-    database: 'gastos_mensais_v2'
+    host: process.env.db_host,
+    user: process.env.db_user,
+    password: process.env.db_password,
+    database: process.env.db_database,
 })
 
 connection.connect()
-
 
 export default {
     query<T = any>(sqlQuery: string, params?: any[]): Promise<T[]> {
