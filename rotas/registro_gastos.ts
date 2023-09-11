@@ -25,7 +25,7 @@ registro_gastos.get('/registro_gastos', AsyncHandler(async (req, res) => {
 }))
 
 registro_gastos.get('/registro_gastos/:banco/:tipo/:mes/:ano', AsyncHandler(async (req, res) => {
-    res.json(await conn.query("SELECT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND MONTH(data_registro) = ? AND YEAR(data_registro) = ? ORDER BY data_gasto", [req.params.banco, req.params.tipo, req.params.mes, req.params.ano]))
+    res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND MONTH(data_registro) = ? AND YEAR(data_registro) = ? ORDER BY data_gasto", [req.params.banco, req.params.tipo, req.params.mes, req.params.ano]))
 }))
 
 registro_gastos.post('/registro_gastos', AsyncHandler(async (req, res) => {
@@ -56,6 +56,10 @@ function novoGasto(body: Partial<Registro_gasto>) {
             })
         }
 
+        if (novosRegistros.length === 0) {
+            return { msg: "Sucesso!" }
+        }
+
         await conn.query("INSERT INTO registro_gastos (??) VALUES ?", formatInsert(novosRegistros))
 
         return { msg: "Sucesso!" }
@@ -82,8 +86,15 @@ function validateColumns(insert: Record<string, any>[]) {
 }
 
 registro_gastos.put('/registro_gastos/:id', AsyncHandler(async (req, res) => {
-    await conn.query("DELETE FROM registro_gastos WHERE anterior_id = ?", [req.params.id, req.params.id])
-    await conn.query("DELETE FROM registro_gastos WHERE id = ?", [req.params.id, req.params.id])
+    let [registroParaApagar]: Registro_gasto[] = await conn.query("SELECT * FROM registro_gastos WHERE id = ?", [req.params.id])
+
+    if (registroParaApagar.fixo && moment(registroParaApagar.data_registro).month() !== moment().month()) {
+        res.json(await novoGasto(req.body))
+        return
+    }
+
+    await conn.query("DELETE FROM registro_gastos WHERE anterior_id = ?", [req.params.id])
+    await conn.query("DELETE FROM registro_gastos WHERE id = ?", [req.params.id])
 
     res.json(await novoGasto(req.body))
 }))

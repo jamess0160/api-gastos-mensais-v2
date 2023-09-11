@@ -76,14 +76,15 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     let entradasTiago = entradasPessoais.find((item) => item.tipo === 2)
     let entradasLuana = entradasPessoais.find((item) => item.tipo === 3)
 
-    let [{ totalGeral }] = await conn.query("SELECT SUM(valor) as totalGeral FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = ? AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano, 1])
-    let [{ totalTiago }] = await conn.query("SELECT SUM(valor) as totalTiago FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = ? AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano, 2])
-    let [{ totalLuana }] = await conn.query("SELECT SUM(valor) as totalLuana FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = ? AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano, 3])
+    let [{ totalGeral }] = await conn.query("SELECT SUM(valor) as totalGeral FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let [{ totalTiago }] = await conn.query("SELECT SUM(valor) as totalTiago FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let [{ totalLuana }] = await conn.query("SELECT SUM(valor) as totalLuana FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 3 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let [{ totalConjunto }] = await conn.query("SELECT SUM(valor) as totalConjunto FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 4 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
 
     res.json({
         geral: (entradasGerais?.valor || 0) - totalGeral,
-        tiago: (entradasTiago?.valor || 0) - totalTiago,
-        luana: (entradasLuana?.valor || 0) - totalLuana,
+        tiago: (entradasTiago?.valor || 0) - (totalTiago - (totalConjunto / 2)),
+        luana: (entradasLuana?.valor || 0) - (totalLuana - (totalConjunto / 2)),
     })
 }))
 

@@ -22,6 +22,7 @@ CREATE TABLE bancos (
  1- Geral
  2- Tiago
  3- Luana
+ 4- Conjunto
  */
 CREATE TABLE registro_gastos (
     id int PRIMARY KEY auto_increment,
