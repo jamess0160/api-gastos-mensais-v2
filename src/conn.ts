@@ -50,5 +50,22 @@ export default {
                 }
             })
         })
+    },
+
+    transactionFn(fn: () => Promise<any>) {
+        return new Promise((resolve, reject) => {
+            connection.beginTransaction(async (error) => {
+                if (error) return reject(error)
+
+                try {
+                    let res = await fn()
+                    connection.commit()
+                    resolve(res)
+                } catch (error) {
+                    reject(error)
+                    connection.rollback()
+                }
+            })
+        })
     }
 }
