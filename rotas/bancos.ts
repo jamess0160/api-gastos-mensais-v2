@@ -44,9 +44,9 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     let bancos: Tile[] = await conn.query("SELECT * FROM bancos ORDER BY posicao, id LIMIT 500")
 
     for await (let item of bancos) {
-        let [{ totalGeral, totalGeralInativos }] = await conn.query("SELECT SUM(valor) as totalGeralInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalGeral FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 1])
-        let [{ totalTransportes, totalTransportesInativos }] = await conn.query("SELECT SUM(valor) as totalTransportesInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalTransportes FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 2])
-        let [{ totalAlimentacao, totalAlimentacaoInativos }] = await conn.query("SELECT SUM(valor) as totalAlimentacaoInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalAlimentacao FROM registro_gastos WHERE banco_id = ? AND MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 3])
+        let [{ totalGeral, totalGeralInativos }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeralInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalGeral FROM registro_gastos WHERE banco_id = ? AND ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 1])
+        let [{ totalTransportes, totalTransportesInativos }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTransportesInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalTransportes FROM registro_gastos WHERE banco_id = ? AND ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 2])
+        let [{ totalAlimentacao, totalAlimentacaoInativos }] = await conn.query("SELECT DISTINCT SUM(valor) as totalAlimentacaoInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalAlimentacao FROM registro_gastos WHERE banco_id = ? AND ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 3])
 
         item.totais = {
             alimentacao: totalAlimentacao !== null ? totalAlimentacao.toFixed(2) : 0,
@@ -76,10 +76,10 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     let entradasTiago = entradasPessoais.find((item) => item.tipo === 2)
     let entradasLuana = entradasPessoais.find((item) => item.tipo === 3)
 
-    let [{ totalGeral }] = await conn.query("SELECT SUM(valor) as totalGeral FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
-    let [{ totalTiago }] = await conn.query("SELECT SUM(valor) as totalTiago FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
-    let [{ totalLuana }] = await conn.query("SELECT SUM(valor) as totalLuana FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 3 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
-    let [{ totalConjunto }] = await conn.query("SELECT SUM(valor) as totalConjunto FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = 4 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let [{ totalGeral }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeral FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let [{ totalTiago }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTiago FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let [{ totalLuana }] = await conn.query("SELECT DISTINCT SUM(valor) as totalLuana FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 3 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let [{ totalConjunto }] = await conn.query("SELECT DISTINCT SUM(valor) as totalConjunto FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 4 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
 
     res.json({
         geral: (entradasGerais?.valor || 0) - totalGeral,
