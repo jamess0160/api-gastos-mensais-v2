@@ -28,6 +28,10 @@ registro_gastos.get('/registro_gastos/:banco/:tipo/:mes/:ano', AsyncHandler(asyn
     res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND MONTH(data_registro) = ? AND YEAR(data_registro) = ? ORDER BY data_gasto, descricao", [req.params.banco, req.params.tipo, req.params.mes, req.params.ano]))
 }))
 
+registro_gastos.get('/registro_gastos/pessoais/:destino/:tipo/:mes/:ano', AsyncHandler(async (req, res) => {
+    res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE destino = ? AND tipo = ? AND MONTH(data_registro) = ? AND YEAR(data_registro) = ? ORDER BY data_gasto, descricao", [req.params.destino, req.params.tipo, req.params.mes, req.params.ano]))
+}))
+
 registro_gastos.post('/registro_gastos', AsyncHandler(async (req, res) => {
     res.json(await novoGasto(req.body))
 }))
