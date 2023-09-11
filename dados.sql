@@ -1,4 +1,4 @@
-USE gastos_mensais_v2;
+USE gastos_mensais_v2_teste;
 
 INSERT INTO
     bancos (nome, icone, posicao)
@@ -7,16 +7,16 @@ VALUES
 
 INSERT INTO
     registro_gastos (
-        data_gasto,
         descricao,
         parcela_atual,
         parcelas_totais,
         valor,
         tipo,
+        destino,
         banco_id
     )
 VALUES
-    ("2023-03-26", "teste", 1, 2, 10, 3, 1);
+    ("teste", 1, 2, 10, 3, 1, 1);
 
 INSERT INTO
     tipos_entrada (nome)
@@ -25,13 +25,14 @@ VALUES
     ("Salario Luana");
 
 INSERT INTO
-    entradas (tipo_id, valor, data_registro)
-VALUES
-    (1, 2881.59, '2023-02-25 13:00:00'),
-    (2, 1000, '2023-02-25 13:00:00');
-
-INSERT INTO
     entradas (tipo_id, valor)
 VALUES
-    (1, 2781.59),
-    (2, 1000);
+    (1, 3700),
+    (2, 1600);
+
+INSERT INTO
+    entradas_pessoais (tipo, valor)
+VALUES
+    (1, 800),
+    (2, 500),
+    (3, 500);

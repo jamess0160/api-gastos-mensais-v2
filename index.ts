@@ -15,6 +15,6 @@ app.get("/teste", AsyncHandler(async (req, res, next) => {
 
 app.use(rotas)
 
-app.listen(3001, () => {
-    console.log("API aberta: http://localhost:3001/teste")
+app.listen(3000, () => {
+    console.log("API aberta: http://localhost:3000/teste")
 })

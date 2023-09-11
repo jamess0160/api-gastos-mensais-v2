@@ -1,6 +1,8 @@
-CREATE DATABASE gastos_mensais_v2;
+DROP DATABASE gastos_mensais_v2_teste;
 
-USE gastos_mensais_v2;
+CREATE DATABASE gastos_mensais_v2_teste;
+
+USE gastos_mensais_v2_teste;
 
 CREATE TABLE bancos (
     id int PRIMARY KEY auto_increment,
@@ -15,6 +17,12 @@ CREATE TABLE bancos (
  2- Transporte
  3- Alimentação
  */
+/*
+ Tipos de destinos:
+ 1- Geral
+ 2- Tiago
+ 3- Luana
+ */
 CREATE TABLE registro_gastos (
     id int PRIMARY KEY auto_increment,
     data_registro datetime DEFAULT (CURRENT_DATE),
@@ -24,9 +32,13 @@ CREATE TABLE registro_gastos (
     parcelas_totais int,
     valor float,
     tipo int,
+    destino int,
     banco_id int,
+    anterior_id int,
+    fixo boolean,
     active boolean default true,
-    foreign key (banco_id) references bancos(id)
+    foreign key (banco_id) references bancos(id),
+    foreign key (anterior_id) references registro_gastos(id)
 );
 
 CREATE TABLE tipos_entrada(
@@ -42,8 +54,15 @@ CREATE TABLE entradas (
     foreign key (tipo_id) references tipos_entrada(id)
 );
 
-CREATE TABLE mesesDuplicados (
+/*
+ Tipos:
+ 1- Geral
+ 2- Tiago
+ 3- Luana
+ */
+CREATE TABLE entradas_pessoais (
     id int PRIMARY KEY auto_increment,
-    mes int,
-    ano int
+    tipo int,
+    valor float,
+    data_registro datetime DEFAULT (CURRENT_DATE)
 );
