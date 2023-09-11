@@ -19,6 +19,13 @@ type Tile = Banco & {
     totalInativos: string
 }
 
+interface EntradasPessoais {
+    id: number
+    tipo: number
+    valor: number
+    data_registro: string
+}
+
 const bancos = express()
 
 //#region Rotas
@@ -51,6 +58,33 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     }
 
     res.json(bancos)
+}))
+
+bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, res) => {
+
+    let entradasPessoais: EntradasPessoais[] = await conn.query("SELECT * FROM entradas_pessoais WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ?", [req.params.mes, req.params.ano])
+
+    if (entradasPessoais.length === 0) {
+        entradasPessoais = await conn.query(`
+            SELECT * FROM entradas_pessoais WHERE id in (
+                SELECT MAX(id) FROM entradas_pessoais GROUP BY tipo
+            )
+        `)
+    }
+
+    let entradasGerais = entradasPessoais.find((item) => item.tipo === 1)
+    let entradasTiago = entradasPessoais.find((item) => item.tipo === 2)
+    let entradasLuana = entradasPessoais.find((item) => item.tipo === 3)
+
+    let [{ totalGeral }] = await conn.query("SELECT SUM(valor) as totalGeral FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = ? AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano, 1])
+    let [{ totalTiago }] = await conn.query("SELECT SUM(valor) as totalTiago FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = ? AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano, 2])
+    let [{ totalLuana }] = await conn.query("SELECT SUM(valor) as totalLuana FROM registro_gastos WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ? AND destino = ? AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano, 3])
+
+    res.json({
+        geral: (entradasGerais?.valor || 0) - totalGeral,
+        tiago: (entradasTiago?.valor || 0) - totalTiago,
+        luana: (entradasLuana?.valor || 0) - totalLuana,
+    })
 }))
 
 bancos.post('/bancos', AsyncHandler(async (req, res) => {
