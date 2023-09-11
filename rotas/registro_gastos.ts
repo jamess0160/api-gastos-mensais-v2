@@ -25,11 +25,11 @@ registro_gastos.get('/registro_gastos', AsyncHandler(async (req, res) => {
 }))
 
 registro_gastos.get('/registro_gastos/:banco/:tipo/:mes/:ano', AsyncHandler(async (req, res) => {
-    res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND MONTH(data_registro) = ? AND YEAR(data_registro) = ? ORDER BY data_gasto, descricao", [req.params.banco, req.params.tipo, req.params.mes, req.params.ano]))
+    res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND ((MONTH(data_registro) = ? AND YEAR(data_registro) = ?) OR fixo = true) ORDER BY data_gasto, descricao", [req.params.banco, req.params.tipo, req.params.mes, req.params.ano]))
 }))
 
 registro_gastos.get('/registro_gastos/pessoais/:destino/:tipo/:mes/:ano', AsyncHandler(async (req, res) => {
-    res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE destino = ? AND tipo = ? AND MONTH(data_registro) = ? AND YEAR(data_registro) = ? ORDER BY data_gasto, descricao", [req.params.destino, req.params.tipo, req.params.mes, req.params.ano]))
+    res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE destino = ? AND tipo = ? AND ((MONTH(data_registro) = ? AND YEAR(data_registro) = ?) OR fixo = true) ORDER BY data_gasto, descricao", [req.params.destino, req.params.tipo, req.params.mes, req.params.ano]))
 }))
 
 registro_gastos.post('/registro_gastos', AsyncHandler(async (req, res) => {
@@ -49,15 +49,15 @@ function novoGasto(body: Partial<Registro_gasto>) {
 
         let novosRegistros: Partial<Registro_gasto>[] = []
 
-        let loop = body.parcelas_totais - body.parcela_atual
-
-        for (let i = 1; i <= loop; i++) {
+        let count = 1
+        for (let i = body.parcela_atual; i < body.parcelas_totais; i++) {
             novosRegistros.push({
                 ...body,
-                data_registro: body.data_registro ? moment(body.data_registro).add(i, "months").format("YYYY-MM-DD") : moment().add(i, "months").format("YYYY-MM-DD"),
+                data_registro: body.data_registro ? moment(body.data_registro).add(count, "months").format("YYYY-MM-DD") : moment().add(count, "months").format("YYYY-MM-DD"),
                 parcela_atual: i + 1,
                 anterior_id: inserido.id
             })
+            count++
         }
 
         if (novosRegistros.length === 0) {
