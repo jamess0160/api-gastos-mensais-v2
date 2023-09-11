@@ -83,8 +83,8 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
     res.json({
         geral: (entradasGerais?.valor || 0) - totalGeral,
-        tiago: (entradasTiago?.valor || 0) - (totalTiago - (totalConjunto / 2)),
-        luana: (entradasLuana?.valor || 0) - (totalLuana - (totalConjunto / 2)),
+        tiago: (entradasTiago?.valor || 0) - (totalTiago + (totalConjunto / 2)),
+        luana: (entradasLuana?.valor || 0) - (totalLuana + (totalConjunto / 2)),
     })
 }))
 
