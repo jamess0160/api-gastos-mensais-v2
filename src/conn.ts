@@ -16,13 +16,18 @@ const connection = mysql.createConnection({
 connection.connect()
 
 export default {
-    query<T = any>(sqlQuery: string, params?: any[]): Promise<T[]> {
+    query<T = any>(sqlQuery: string, params?: any[], debug?: boolean): Promise<T[]> {
 
         return new Promise((resolve, reject) => {
             let queryObject: QueryOptions = {
                 sql: sqlQuery,
                 values: params
             }
+
+            if (debug) {
+                console.log(queryObject)
+            }
+
             connection.query(queryObject, (error, result) => {
                 if (error) {
                     reject(error)
