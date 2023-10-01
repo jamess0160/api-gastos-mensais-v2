@@ -16,23 +16,36 @@ entradas.get('/entradas', AsyncHandler(async (req, res) => {
 }))
 
 entradas.get('/entradas/recentes/mes=:mes/ano=:ano', AsyncHandler(async (req, res) => {
-	let entradas = await conn.query(`
-        SELECT * FROM entradas WHERE id IN (
-            SELECT max(id) FROM entradas WHERE MONTH(data_registro) = ? AND YEAR(data_registro) = ? GROUP BY tipo_id
-        )
-    `, [req.params.mes, req.params.ano])
+	res.json(await pegarEntradasMesAno(req.params.mes, req.params.ano))
+}))
+
+export async function pegarEntradasMesAno(mes: string, ano: string) {
+	let entradas = await conn.query<Entrada>(`
+		SELECT
+			entradas.*,
+			tipos_entrada.nome
+		FROM
+			entradas
+			JOIN tipos_entrada ON tipos_entrada.id = entradas.tipo_id
+		WHERE
+			entradas.id IN (SELECT max(id) FROM entradas WHERE MONTH(data_registro) = ? AND YEAR(data_registro) = ? GROUP BY tipo_id)
+	`, [mes, ano])
 
 	if (entradas.length === 0) {
-		res.json(await conn.query(`
-			SELECT * FROM entradas WHERE id IN (
-				SELECT max(id) FROM entradas GROUP BY tipo_id
-			)
-		`))
-		return
+		return await conn.query<Entrada>(`
+			SELECT
+				entradas.*,
+				tipos_entrada.nome
+			FROM
+				entradas
+				JOIN tipos_entrada ON tipos_entrada.id = entradas.tipo_id
+			WHERE
+				entradas.id IN (SELECT max(id) FROM entradas GROUP BY tipo_id)
+		`)
 	}
 
-	res.json(entradas)
-}))
+	return entradas
+}
 
 entradas.post('/entradas', AsyncHandler(async (req, res) => {
 	res.json(await conn.query("INSERT INTO entradas SET ?", [req.body]))

@@ -2,6 +2,7 @@ import express from "express"
 import AsyncHandler from "../src/asyncHandler"
 import conn from "../src/conn"
 import { Registro_gasto } from "./registro_gastos"
+import { pegarEntradasMesAno } from "./entradas"
 
 export type Banco = {
     id: number,
@@ -17,13 +18,6 @@ type Tile = Banco & {
     },
     total: string
     totalInativos: string
-}
-
-interface EntradasPessoais {
-    id: number
-    tipo: number
-    valor: number
-    data_registro: string
 }
 
 const bancos = express()
@@ -62,19 +56,32 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
 bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, res) => {
 
-    let entradasPessoais: EntradasPessoais[] = await conn.query("SELECT * FROM entradas_pessoais WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ?", [req.params.mes, req.params.ano])
+    // let entradasPessoais: EntradasPessoais[] = await conn.query("SELECT * FROM entradas_pessoais WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ?", [req.params.mes, req.params.ano])
 
-    if (entradasPessoais.length === 0) {
-        entradasPessoais = await conn.query(`
-            SELECT * FROM entradas_pessoais WHERE id in (
-                SELECT MAX(id) FROM entradas_pessoais GROUP BY tipo
-            )
-        `)
-    }
+    // if (entradasPessoais.length === 0) {
+    //     entradasPessoais = await conn.query(`
+    //         SELECT * FROM entradas_pessoais WHERE id in (
+    //             SELECT MAX(id) FROM entradas_pessoais GROUP BY tipo
+    //         )
+    //     `)
+    // }
 
-    let entradasGerais = entradasPessoais.find((item) => item.tipo === 1)
-    let entradasTiago = entradasPessoais.find((item) => item.tipo === 2)
-    let entradasLuana = entradasPessoais.find((item) => item.tipo === 3)
+    // let entradasGerais = entradasPessoais.find((item) => item.tipo === 1)
+    // let entradasTiago = entradasPessoais.find((item) => item.tipo === 2)
+    // let entradasLuana = entradasPessoais.find((item) => item.tipo === 3)
+
+    let entradas = await pegarEntradasMesAno(req.params.mes, req.params.ano)
+
+    let saldoTotal = entradas.reduce((old, item) => old + item.valor, 0)
+    let gastosGeraisInativos = await pegarGastosGeraisInativos(req.params.mes, req.params.ano)
+
+    let disponivel = saldoTotal - gastosGeraisInativos
+
+    const maxEntradassGerais = 1500
+
+    let entradasGerais = disponivel / 2 > maxEntradassGerais ? maxEntradassGerais : disponivel / 2
+    let entradasTiago = (disponivel - entradasGerais) / 2
+    let entradasLuana = (disponivel - entradasGerais) / 2
 
     let [{ totalGeral }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeral FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
     let [{ totalTiago }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTiago FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
@@ -82,11 +89,32 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     let [{ totalConjunto }] = await conn.query("SELECT DISTINCT SUM(valor) as totalConjunto FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 4 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
 
     res.json({
-        geral: (entradasGerais?.valor || 0) - totalGeral,
-        tiago: (entradasTiago?.valor || 0) - (totalTiago + (totalConjunto / 2)),
-        luana: (entradasLuana?.valor || 0) - (totalLuana + (totalConjunto / 2)),
+        geral: (entradasGerais || 0) - totalGeral,
+        tiago: (entradasTiago || 0) - (totalTiago + (totalConjunto / 2)),
+        luana: (entradasLuana || 0) - (totalLuana + (totalConjunto / 2)),
     })
 }))
+
+async function pegarGastosGeraisInativos(mes: string, ano: string): Promise<number> {
+    let [{ totalGeral }] = await conn.query(`
+        SELECT
+            DISTINCT SUM(valor) as totalGeral
+        FROM
+            registro_gastos
+        WHERE
+            (
+                (
+                    MONTH(data_registro) = ?
+                    AND YEAR(data_registro) = ?
+                )
+                OR fixo = true
+            )
+            AND destino is null
+            AND descricao NOT LIKE '%*%'
+    `, [mes, ano])
+
+    return totalGeral
+}
 
 bancos.post('/bancos', AsyncHandler(async (req, res) => {
     res.json(await conn.query("INSERT INTO bancos SET ?", [req.body]))
