@@ -72,16 +72,40 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
     let entradas = await pegarEntradasMesAno(req.params.mes, req.params.ano)
 
-    let saldoTotal = entradas.reduce((old, item) => old + item.valor, 0)
+    let saldoGeral = entradas.reduce((old, item) => {
+        if (item.tipo_id === 1) {
+            return old + item.valor
+        }
+
+        return old
+    }, 0)
+
+    let saldoPessoalTiago = entradas.reduce((old, item) => {
+        if (item.tipo_id === 2) {
+            return old + item.valor
+        }
+
+        return old
+    }, 0)
+
+    let saldoPessoalLuana = entradas.reduce((old, item) => {
+        if (item.tipo_id === 3) {
+            return old + item.valor
+        }
+
+        return old
+    }, 0)
+
     let gastosGeraisInativos = await pegarGastosGeraisInativos(req.params.mes, req.params.ano)
 
-    let disponivel = saldoTotal - gastosGeraisInativos
+    let disponivel = saldoGeral - gastosGeraisInativos
 
-    const maxEntradassGerais = 1500
 
-    let entradasGerais = disponivel / 2 > maxEntradassGerais ? maxEntradassGerais : disponivel / 2
-    let entradasTiago = (disponivel - entradasGerais) / 2
-    let entradasLuana = (disponivel - entradasGerais) / 2
+    const maxEntradassGerais = 1400
+
+    let entradasGerais = disponivel / 2 < maxEntradassGerais ? maxEntradassGerais : disponivel / 2
+    let entradasTiago = ((disponivel - entradasGerais) / 2) + saldoPessoalTiago
+    let entradasLuana = ((disponivel - entradasGerais) / 2) + saldoPessoalLuana
 
     let [{ totalGeral }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeral FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
     let [{ totalTiago }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTiago FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])

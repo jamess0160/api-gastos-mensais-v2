@@ -67,3 +67,8 @@ CREATE TABLE entradas_pessoais (
     valor float,
     data_registro datetime DEFAULT (CURRENT_DATE)
 );
+
+alter table
+    entradas
+add
+    nome varchar(30);
