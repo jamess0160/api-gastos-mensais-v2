@@ -88,7 +88,7 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
     const maxEntradassGerais = 1400
 
-    let entradasGerais = disponivel / 2 < maxEntradassGerais ? maxEntradassGerais : disponivel / 2
+    let entradasGerais = disponivel / 2 > maxEntradassGerais ? maxEntradassGerais : disponivel / 2
 
     let entradasPessoais = (disponivel - entradasGerais) / 2
 
