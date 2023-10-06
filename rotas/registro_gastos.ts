@@ -5,8 +5,8 @@ import moment from "moment"
 
 export type Registro_gasto = {
     id: number
-    data_registro: string
-    data_gasto: string
+    data_registro: Date | string
+    data_gasto: Date | string
     descricao: string
     parcela_atual: number
     parcelas_totais: number
@@ -25,7 +25,37 @@ registro_gastos.get('/registro_gastos', AsyncHandler(async (req, res) => {
 }))
 
 registro_gastos.get('/registro_gastos/:banco/:tipo/:mes/:ano', AsyncHandler(async (req, res) => {
-    res.json(await conn.query("SELECT DISTINCT * FROM registro_gastos WHERE banco_id = ? AND tipo = ? AND ((MONTH(data_registro) = ? AND YEAR(data_registro) = ?) OR fixo = true) ORDER BY data_gasto, descricao", [req.params.banco, req.params.tipo, req.params.mes, req.params.ano]))
+
+    let registros = await conn.query<Registro_gasto>(`
+        SELECT
+            *
+        FROM
+            registro_gastos
+        WHERE
+            banco_id = ?
+            AND tipo = ?
+            AND (
+                (
+                    MONTH(data_registro) = ?
+                    AND YEAR(data_registro) = ?
+                )
+                OR fixo = true
+            )
+        ORDER BY
+            data_gasto,
+            descricao
+    `, [req.params.banco, req.params.tipo, req.params.mes, req.params.ano])
+
+    let copia = [...registros].reverse()
+
+    res.json(registros.filter((item, index) => {
+
+        let finded = copia.find((subItem) => subItem.descricao === item.descricao && subItem.data_registro.toString() === item.data_registro.toString())
+
+        if (!finded) return true
+
+        return registros.indexOf(finded) === index
+    }))
 }))
 
 registro_gastos.get('/registro_gastos/pessoais/:destino/:tipo/:mes/:ano', AsyncHandler(async (req, res) => {
