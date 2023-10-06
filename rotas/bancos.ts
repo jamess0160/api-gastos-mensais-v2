@@ -56,20 +56,6 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
 bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, res) => {
 
-    // let entradasPessoais: EntradasPessoais[] = await conn.query("SELECT * FROM entradas_pessoais WHERE MONTH(data_registro) = ?  AND YEAR(data_registro) = ?", [req.params.mes, req.params.ano])
-
-    // if (entradasPessoais.length === 0) {
-    //     entradasPessoais = await conn.query(`
-    //         SELECT * FROM entradas_pessoais WHERE id in (
-    //             SELECT MAX(id) FROM entradas_pessoais GROUP BY tipo
-    //         )
-    //     `)
-    // }
-
-    // let entradasGerais = entradasPessoais.find((item) => item.tipo === 1)
-    // let entradasTiago = entradasPessoais.find((item) => item.tipo === 2)
-    // let entradasLuana = entradasPessoais.find((item) => item.tipo === 3)
-
     let entradas = await pegarEntradasMesAno(req.params.mes, req.params.ano)
 
     let saldoGeral = entradas.reduce((old, item) => {
@@ -100,12 +86,14 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
     let disponivel = saldoGeral - gastosGeraisInativos
 
-
     const maxEntradassGerais = 1400
 
     let entradasGerais = disponivel / 2 < maxEntradassGerais ? maxEntradassGerais : disponivel / 2
-    let entradasTiago = ((disponivel - entradasGerais) / 2) + saldoPessoalTiago
-    let entradasLuana = ((disponivel - entradasGerais) / 2) + saldoPessoalLuana
+
+    let entradasPessoais = (disponivel - entradasGerais) / 2
+
+    let entradasTiago = entradasPessoais + saldoPessoalTiago
+    let entradasLuana = entradasPessoais + saldoPessoalLuana
 
     let [{ totalGeral }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeral FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
     let [{ totalTiago }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTiago FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
