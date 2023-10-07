@@ -108,9 +108,9 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 }))
 
 async function pegarGastosGeraisInativos(mes: string, ano: string): Promise<number> {
-    let [{ totalGeral }] = await conn.query(`
+    let registros = await conn.query<Registro_gasto>(`
         SELECT
-            DISTINCT SUM(valor) as totalGeral
+            DISTINCT *
         FROM
             registro_gastos
         WHERE
@@ -125,7 +125,18 @@ async function pegarGastosGeraisInativos(mes: string, ano: string): Promise<numb
             AND descricao NOT LIKE '%*%'
     `, [mes, ano])
 
-    return totalGeral
+    let copia = [...registros].reverse()
+
+    let filtered = registros.filter((item, index) => {
+
+        let finded = copia.find((subItem) => subItem.descricao === item.descricao && subItem.data_registro.toString() === item.data_registro.toString())
+
+        if (!finded) return true
+
+        return registros.indexOf(finded) === index
+    })
+
+    return filtered.reduce((old, item) => old + item.valor, 0)
 }
 
 bancos.post('/bancos', AsyncHandler(async (req, res) => {
