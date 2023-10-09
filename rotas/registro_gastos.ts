@@ -16,6 +16,7 @@ export type Registro_gasto = {
     banco_id: number
     anterior_id: number
     fixo: boolean
+    active: 1 | 0
 }
 
 const registro_gastos = express()
