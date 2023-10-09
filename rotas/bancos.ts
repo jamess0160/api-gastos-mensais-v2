@@ -38,14 +38,14 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     let bancos: Tile[] = await conn.query("SELECT * FROM bancos ORDER BY posicao, id LIMIT 500")
 
     for await (let item of bancos) {
-        let [{ totalGeral, totalGeralInativos }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeralInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalGeral FROM registro_gastos WHERE banco_id = ? AND ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 1])
-        let [{ totalTransportes, totalTransportesInativos }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTransportesInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalTransportes FROM registro_gastos WHERE banco_id = ? AND ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 2])
-        let [{ totalAlimentacao, totalAlimentacaoInativos }] = await conn.query("SELECT DISTINCT SUM(valor) as totalAlimentacaoInativos, SUM(CASE WHEN active = 1 THEN valor ELSE 0 END) AS totalAlimentacao FROM registro_gastos WHERE banco_id = ? AND ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND tipo = ? AND descricao NOT LIKE '%*%'", [item.id, req.params.mes, req.params.ano, 3])
+        let [totalGeral, totalGeralInativos] = await pegarGastos(item.id, req.params.mes, req.params.ano, 1)
+        let [totalTransportes, totalTransportesInativos] = await pegarGastos(item.id, req.params.mes, req.params.ano, 2)
+        let [totalAlimentacao, totalAlimentacaoInativos] = await pegarGastos(item.id, req.params.mes, req.params.ano, 3)
 
         item.totais = {
-            alimentacao: totalAlimentacao !== null ? totalAlimentacao.toFixed(2) : 0,
-            transportes: totalTransportes !== null ? totalTransportes.toFixed(2) : 0,
-            geral: totalGeral !== null ? totalGeral.toFixed(2) : 0,
+            alimentacao: totalAlimentacao !== null ? totalAlimentacao.toFixed(2) : "0",
+            transportes: totalTransportes !== null ? totalTransportes.toFixed(2) : "0",
+            geral: totalGeral !== null ? totalGeral.toFixed(2) : "0",
         }
         item.total = (totalAlimentacao + totalTransportes + totalGeral).toFixed(2)
         item.totalInativos = (totalAlimentacaoInativos + totalTransportesInativos + totalGeralInativos).toFixed(2)
@@ -53,6 +53,50 @@ bancos.get('/bancos/gastosPorBanco/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
     res.json(bancos)
 }))
+
+async function pegarGastos(IdBanco: number, mes: string, ano: string, tipo: number) {
+    let gastos = await conn.query<Registro_gasto>(`
+        SELECT
+            *
+        FROM
+            registro_gastos
+        WHERE
+            banco_id = ?
+            AND (
+                (
+                    MONTH(data_registro) = ?
+                    AND YEAR(data_registro) = ?
+                )
+                OR fixo = true
+            )
+            AND tipo = ?
+            AND descricao NOT LIKE '%*%'
+    `, [IdBanco, mes, ano, tipo])
+
+    let copia = [...gastos].reverse()
+
+    let filtered = gastos.filter((item, index) => {
+
+        let finded = copia.find((subItem) => subItem.descricao === item.descricao && subItem.data_registro.toString() === item.data_registro.toString())
+
+        if (!finded) return true
+
+        return gastos.indexOf(finded) === index
+    })
+
+    let { totalInativos, total } = filtered.reduce((old, item, index) => {
+
+        old.totalInativos += item.valor
+
+        if (item.active === 1) {
+            old.total += item.valor
+        }
+
+        return old
+    }, { totalInativos: 0, total: 0 })
+
+    return [total, totalInativos]
+}
 
 bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, res) => {
 
