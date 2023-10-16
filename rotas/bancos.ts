@@ -110,7 +110,7 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
         return old
     }, 0)
 
-    let saldoPessoalTiago = entradas.reduce((old, item) => {
+    let saldoEntradasPessoalTiago = entradas.reduce((old, item) => {
         if (item.tipo_id === 2) {
             return old + item.valor
         }
@@ -118,8 +118,16 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
         return old
     }, 0)
 
-    let saldoPessoalLuana = entradas.reduce((old, item) => {
+    let saldoEntradasPessoalLuana = entradas.reduce((old, item) => {
         if (item.tipo_id === 3) {
+            return old + item.valor
+        }
+
+        return old
+    }, 0)
+
+    let saldoEntradasPessoalGeral = entradas.reduce((old, item) => {
+        if (item.tipo_id === 4) {
             return old + item.valor
         }
 
@@ -132,12 +140,12 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
 
     const maxEntradassGerais = 1400
 
-    let entradasGerais = disponivel / 2 > maxEntradassGerais ? maxEntradassGerais : disponivel / 2
+    let entradasGerais = (disponivel / 2 > maxEntradassGerais ? maxEntradassGerais : disponivel / 2) + saldoEntradasPessoalGeral
 
     let entradasPessoais = (disponivel - entradasGerais) / 2
 
-    let entradasTiago = entradasPessoais + saldoPessoalTiago
-    let entradasLuana = entradasPessoais + saldoPessoalLuana
+    let entradasTiago = entradasPessoais + saldoEntradasPessoalTiago
+    let entradasLuana = entradasPessoais + saldoEntradasPessoalLuana
 
     let [{ totalGeral }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeral FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
     let [{ totalTiago }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTiago FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])

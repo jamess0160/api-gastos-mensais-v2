@@ -47,25 +47,19 @@ CREATE TABLE tipos_entrada(
     nome varchar(30)
 );
 
+/*
+ Tipos:
+ 1- Geral
+ 2- Pessoal Tiago
+ 3- Pessoal Luana
+ 4- Pessoal geral
+ */
 CREATE TABLE entradas (
     id int PRIMARY KEY auto_increment,
     tipo_id int,
     valor float,
     data_registro datetime DEFAULT (CURRENT_DATE),
     foreign key (tipo_id) references tipos_entrada(id)
-);
-
-/*
- Tipos:
- 1- Geral
- 2- Tiago
- 3- Luana
- */
-CREATE TABLE entradas_pessoais (
-    id int PRIMARY KEY auto_increment,
-    tipo int,
-    valor float,
-    data_registro datetime DEFAULT (CURRENT_DATE)
 );
 
 alter table
