@@ -134,61 +134,65 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
         return old
     }, 0)
 
-    let gastosGeraisInativos = await pegarGastosGeraisInativos(req.params.mes, req.params.ano)
+    let { sum: gastosGeraisInativos, registros } = await pegarGastosInativos(req.params.mes, req.params.ano)
 
     let disponivel = saldoGeral - gastosGeraisInativos
 
     const maxEntradassGerais = 1400
 
-    let entradasGerais = (disponivel / 2 > maxEntradassGerais ? maxEntradassGerais : disponivel / 2) + saldoEntradasPessoalGeral
+    let entradasGeraisBase = disponivel / 2 > maxEntradassGerais ? maxEntradassGerais : disponivel / 2
+    let entradasGerais = entradasGeraisBase + saldoEntradasPessoalGeral
 
-    let entradasPessoais = (disponivel - entradasGerais) / 2
+    let entradasPessoais = (disponivel - entradasGeraisBase) / 2
 
     let entradasTiago = entradasPessoais + saldoEntradasPessoalTiago
     let entradasLuana = entradasPessoais + saldoEntradasPessoalLuana
 
-    let [{ totalGeral }] = await conn.query("SELECT DISTINCT SUM(valor) as totalGeral FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 1 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
-    let [{ totalTiago }] = await conn.query("SELECT DISTINCT SUM(valor) as totalTiago FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 2 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
-    let [{ totalLuana }] = await conn.query("SELECT DISTINCT SUM(valor) as totalLuana FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 3 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
-    let [{ totalConjunto }] = await conn.query("SELECT DISTINCT SUM(valor) as totalConjunto FROM registro_gastos WHERE ((MONTH(data_registro) = ?  AND YEAR(data_registro) = ?) OR fixo = true) AND destino = 4 AND descricao NOT LIKE '%*%'", [req.params.mes, req.params.ano])
+    let totalGastosGeral = registros.reduce((old, item) => item.destino === 1 ? old + item.valor : old, 0)
+    let totalGastosTiago = registros.reduce((old, item) => item.destino === 2 ? old + item.valor : old, 0)
+    let totalGastosLuana = registros.reduce((old, item) => item.destino === 3 ? old + item.valor : old, 0)
+    let totalGastosConjunto = registros.reduce((old, item) => item.destino === 4 ? old + item.valor : old, 0)
+
+    console.log(registros.length)
 
     res.json({
-        geral: (entradasGerais || 0) - totalGeral,
-        tiago: (entradasTiago || 0) - (totalTiago + (totalConjunto / 2)),
-        luana: (entradasLuana || 0) - (totalLuana + (totalConjunto / 2)),
+        geral: (entradasGerais || 0) - totalGastosGeral,
+        tiago: (entradasTiago || 0) - (totalGastosTiago + (totalGastosConjunto / 2)),
+        luana: (entradasLuana || 0) - (totalGastosLuana + (totalGastosConjunto / 2)),
     })
 }))
 
-async function pegarGastosGeraisInativos(mes: string, ano: string): Promise<number> {
+async function pegarGastosInativos(mes: string, ano: string): Promise<{ sum: number, registros: Registro_gasto[] }> {
     let registros = await conn.query<Registro_gasto>(`
         SELECT
-            DISTINCT *
+            *
         FROM
             registro_gastos
         WHERE
-            (
-                (
-                    MONTH(data_registro) = ?
-                    AND YEAR(data_registro) = ?
-                )
-                OR fixo = true
-            )
-            AND destino is null
-            AND descricao NOT LIKE '%*%'
+            id IN(
+                select
+                    MAX(id)
+                from
+                    registro_gastos
+                WHERE
+                    (
+                        (
+                            MONTH(data_registro) = ?
+                            AND YEAR(data_registro) = ?
+                        )
+                        OR fixo = true
+                    )
+                    AND descricao NOT LIKE '%*%'
+                GROUP BY
+                    descricao,
+                    data_registro
+            );
     `, [mes, ano])
 
-    let copia = [...registros].reverse()
-
-    let filtered = registros.filter((item, index) => {
-
-        let finded = copia.find((subItem) => subItem.descricao === item.descricao && subItem.data_registro.toString() === item.data_registro.toString())
-
-        if (!finded) return true
-
-        return registros.indexOf(finded) === index
-    })
-
-    return filtered.reduce((old, item) => old + item.valor, 0)
+    return {
+        sum: registros.reduce((old, item) => item.destino === null ? old + item.valor : old, 0),
+        registros: registros
+    }
 }
 
 bancos.post('/bancos', AsyncHandler(async (req, res) => {
