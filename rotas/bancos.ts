@@ -153,8 +153,6 @@ bancos.get('/bancos/gastosPessoais/mes=:mes/ano=:ano', AsyncHandler(async (req, 
     let totalGastosLuana = registros.reduce((old, item) => item.destino === 3 ? old + item.valor : old, 0)
     let totalGastosConjunto = registros.reduce((old, item) => item.destino === 4 ? old + item.valor : old, 0)
 
-    console.log(registros.length)
-
     res.json({
         geral: (entradasGerais || 0) - totalGastosGeral,
         tiago: (entradasTiago || 0) - (totalGastosTiago + (totalGastosConjunto / 2)),
