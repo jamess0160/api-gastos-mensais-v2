@@ -1,4 +1,4 @@
-import mysql, { QueryOptions } from "mysql"
+import mysql, { QueryOptions } from "mysql2"
 import "dotenv/config"
 
 type transactionParam = {
@@ -33,7 +33,7 @@ export default {
                     reject(error)
                     return
                 }
-                resolve(result)
+                resolve(result as T[])
             })
         })
     },
@@ -47,11 +47,11 @@ export default {
                     for await (let item of queryes) {
                         await this.query(item.query, item.params)
                     }
-                    connection.commit()
+                    connection.commit(console.log)
                     resolve({ msg: "Success" })
                 } catch (error) {
                     reject(error)
-                    connection.rollback()
+                    connection.rollback(console.log)
                 }
             })
         })
@@ -64,11 +64,11 @@ export default {
 
                 try {
                     let res = await fn()
-                    connection.commit()
+                    connection.commit(console.log)
                     resolve(res)
                 } catch (error) {
                     reject(error)
-                    connection.rollback()
+                    connection.rollback(console.log)
                 }
             })
         })

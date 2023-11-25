@@ -1,13 +1,12 @@
 import { NextFunction, Request, Response } from "express"
 import path from "path"
 import fs from 'fs/promises'
-import { MysqlError } from "mysql"
 
 // Função destinada para tratar erros de funções asyncronas da API
 export default function AsyncHandler(callback: (req: Request, res: Response, next?: NextFunction) => Promise<void>) {
     // Começa retornando uma função que sera executada pelo Express
     return function (req: Request, res: Response, next: NextFunction) {
-        callback(req, res, next).catch((error: Error | MysqlError) => {
+        callback(req, res, next).catch((error: any) => {
 
             // Trata o erro passando ele para o console e adicionando pontos especificos ao arquivo log.json através da função adicionarLog
 
